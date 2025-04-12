@@ -1,0 +1,43 @@
+image: golang:1.24
+
+variables:
+  GOPATH: $CI_PROJECT_DIR
+  GITLAB_BASE_URL: "https://gitlab.com/api/v4"
+
+stages:
+  - test
+
+test:gitlab:
+  stage: test
+  script:
+    - go version
+    - go env
+    - go test -v ./pkg/gitlab/... -coverprofile=coverage.out
+    - go tool cover -func=coverage.out
+  coverage: '/total:\s+\(statements\)\s+(\d+.\d+)%/'
+  artifacts:
+    paths:
+      - coverage.out
+  # rules:
+  #   - if: $CI_COMMIT_BRANCH == "main"
+  #   - if: $CI_COMMIT_BRANCH =~ /^feature\/.*/
+  #   - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+test:gitlab:integration:
+  stage: test
+  script:
+    - go version
+    - go env
+    - go test -v ./pkg/gitlab/... -run TestIntegrationGitLab -coverprofile=coverage-integration.out
+    - go tool cover -func=coverage-integration.out
+  coverage: '/total:\s+\(statements\)\s+(\d+.\d+)%/'
+  artifacts:
+    paths:
+      - coverage-integration.out
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH =~ /^feature\/.*/
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  variables:
+    GITLAB_INTEGRATION_TEST: "true"
+    GITLAB_TOKEN: $GITLAB_TEST_TOKEN 
